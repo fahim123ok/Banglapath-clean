@@ -580,7 +580,7 @@ function launch(fast = false) {
     document.body.classList.add('is-launched');
     tigerVideo?.pause();
     deerVideo?.pause();
-    sc?.querySelectorAll('video').forEach((video) => video.pause());
+    document.getElementById('screen-carousel')?.querySelectorAll('video').forEach((video) => video.pause());
     revealMobileNav();
     doEnterHome();
     return;

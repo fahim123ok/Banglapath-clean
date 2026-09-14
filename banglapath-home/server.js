@@ -45,6 +45,8 @@ for (const envPath of [path.join(ROOT, '.env'), path.join(process.cwd(), '.env')
 // Read the key after loading the local environment file.
 const FALLBACK_GEMINI_API_KEY = process.env.GEMINI_API_KEY_FALLBACK || 'SET_GEMINI_KEY_IN_RENDER_ENV';
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim() || (process.env.GEMINI_API_KEY_FALLBACK || '').trim() || FALLBACK_GEMINI_API_KEY.trim();
+const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -146,6 +148,12 @@ function readReply(raw) {
   return { reply: cleanReplyText(replyStr), places: extractedPlaces, sources, finish: cand?.finishReason };
 }
 
+function readGroqReply(raw) {
+  const data = JSON.parse(raw);
+  const text = data.choices?.[0]?.message?.content || '';
+  return readReply(JSON.stringify({ candidates: [{ content: { parts: [{ text }] } }] }));
+}
+
 function json(res, code, body) {
   const payload = JSON.stringify(body);
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(payload) });
@@ -171,9 +179,8 @@ function readBody(req, limit = 256 * 1024) {
 }
 
 async function chat(req, res) {
-  const key = GEMINI_API_KEY || "";
-  if (!key || key === 'SET_GEMINI_KEY_IN_RENDER_ENV') {
-    return json(res, 503, { error: 'GEMINI_API_KEY is not configured. Add a real key in the deployment environment.' });
+  if (!GROQ_API_KEY && (!GEMINI_API_KEY || GEMINI_API_KEY === 'SET_GEMINI_KEY_IN_RENDER_ENV')) {
+    return json(res, 503, { error: 'No AI provider is configured. Add GROQ_API_KEY or GEMINI_API_KEY in the deployment environment.' });
   }
 
   let payload;
@@ -266,6 +273,46 @@ KNOWLEDGE SCOPE:
     },
     systemInstruction: { parts: [{ text: safeSystemPrompt }] },
   };
+
+  // Groq is the fast primary provider. Gemini remains the fallback when Groq
+  // is unavailable, rate-limited, or returns an unusable response.
+  if (GROQ_API_KEY) {
+    try {
+      const groqMessages = [
+        { role: 'system', content: safeSystemPrompt },
+        ...sanitizedContents.map((turn) => ({
+          role: turn.role === 'model' ? 'assistant' : 'user',
+          content: turn.parts.map((part) => part.text).join('\n'),
+        })),
+      ];
+      const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${GROQ_API_KEY}` },
+        body: JSON.stringify({
+          model: GROQ_MODEL,
+          messages: groqMessages,
+          temperature: 0.75,
+          max_tokens: 1200,
+          response_format: { type: 'json_object' },
+        }),
+        signal: AbortSignal.timeout(25000),
+      });
+      const groqRaw = await groqResponse.text();
+      if (groqResponse.ok) {
+        const out = readGroqReply(groqRaw);
+        if (out.reply) return json(res, 200, { reply: out.reply, places: out.places.slice(0, 2), sources: [] });
+      } else if (process.env.NODE_ENV !== 'production') {
+        console.error(`[chat] Groq ${groqResponse.status}: ${groqRaw.slice(0, 240)}`);
+      }
+    } catch (err) {
+      if (process.env.NODE_ENV !== 'production') console.error(`[chat] Groq unavailable: ${err.message}`);
+    }
+  }
+
+  const key = GEMINI_API_KEY || '';
+  if (!key || key === 'SET_GEMINI_KEY_IN_RENDER_ENV') {
+    return json(res, 503, { error: 'Groq was unavailable and GEMINI_API_KEY is not configured for fallback.' });
+  }
 
   // Overload, rate limits and empty candidates are all transient, and a chat
   // bubble that says "502" is useless to a traveller — work down the models

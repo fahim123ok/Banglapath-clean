@@ -22,9 +22,10 @@
    - **Name:** banglapath
    - **Build Command:** `npm install && npm run build`
    - **Start Command:** `npm start`
-   - **Environment Variables:** 
-     - Key: `GEMINI_API_KEY`
-     - Value: (আপনার API key)
+    - **Environment Variables:**
+       - Key: `GROQ_API_KEY`, Value: আপনার নতুন Groq API key (primary AI)
+       - Key: `GEMINI_API_KEY`, Value: আপনার Gemini API key (Groq fallback)
+       - Key: `GROQ_MODEL`, Value: `llama-3.3-70b-versatile` (optional)
 6. "Create Web Service" ক্লিক করুন
 7. ⏳ 3-5 মিনিট deploy time
 8. ✅ Live link: `https://banglapath.onrender.com`

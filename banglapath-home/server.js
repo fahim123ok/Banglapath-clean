@@ -19,7 +19,6 @@ const PORT = Number(process.env.PORT) || 3000;
 const MODELS = [
   ...(process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : []),
   'gemini-3.5-flash-lite',
-  'gemini-2.5-flash-lite',
 ].filter((m, i, all) => all.indexOf(m) === i);
 
 // Thinking is configured differently across generations, and both families
@@ -103,7 +102,8 @@ try {
 function readReply(raw) {
   const data = JSON.parse(raw);
   const cand = data.candidates?.[0];
-  const sources = (cand?.groundingMetadata?.groundingChunks || [])
+  const grounding = cand?.groundingMetadata || data.groundingMetadata || {};
+  const sources = (grounding.groundingChunks || [])
     .map((chunk) => chunk.web)
     .filter((web) => web && /^https?:\/\//i.test(web.uri || ''))
     .map((web) => ({ title: String(web.title || web.uri), uri: web.uri }))
@@ -145,7 +145,7 @@ function readReply(raw) {
     }
   }
 
-  return { reply: cleanReplyText(replyStr), places: extractedPlaces, sources, finish: cand?.finishReason };
+  return { reply: cleanReplyText(replyStr), places: extractedPlaces, sources, finish: cand?.finishReason, groundingQueries: grounding.webSearchQueries || [] };
 }
 
 function readGroqReply(raw) {
@@ -322,10 +322,11 @@ KNOWLEDGE SCOPE:
   // before giving up.
   let last = 'Gemini did not answer.';
   const deadline = Date.now() + 90000;
-  for (let attempt = 0; attempt < MODELS.length; attempt += 1) {
+  const uniqueModels = [...new Set(MODELS)];
+  for (let attempt = 0; attempt < uniqueModels.length; attempt += 1) {
     if (attempt) await new Promise((r) => setTimeout(r, 800));
     if (Date.now() > deadline) break;
-    const model = MODELS[Math.min(attempt, MODELS.length - 1)];
+    const model = uniqueModels[attempt];
     const tc = thinkingFor(model);
     if (supportsGoogleSearch(model)) {
       body.tools = [{ google_search: {} }];
@@ -369,7 +370,7 @@ KNOWLEDGE SCOPE:
         upstream.status === 429
           ? 'The Gemini key has run out of free quota for now — try again in a minute.'
           : `Gemini said: ${message}`;
-      if (upstream.status === 429) break;
+      if (upstream.status === 429 && !needsWebSearch) break;
       if (upstream.status < 500 && upstream.status !== 429 && upstream.status !== 404) break;
       continue;
     }
@@ -386,6 +387,7 @@ KNOWLEDGE SCOPE:
       last = 'Gemini sent an empty reply.';
       continue;
     }
+    if (needsWebSearch && !out.sources.length && attempt < uniqueModels.length - 1) continue;
     return json(res, 200, { reply: out.reply, places: out.places.slice(0, 2), sources: out.sources });
   }
 

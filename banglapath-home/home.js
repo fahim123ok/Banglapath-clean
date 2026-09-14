@@ -823,8 +823,8 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   async function send(text, { display = text } = {}) {
     if (!text.trim()) return;
     if (busy) {
-      // Safety unlock if busy state was pending
-      busy = false;
+      showToast('I am still answering the previous question. Your pin will be next...');
+      return;
     }
     addMessage('user', display);
     history.push({ role: 'user', text });
@@ -8552,7 +8552,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
 
     // ---- Chat message rendering ----
 
-    function mhAddMessage(role, text) {
+    function mhAddMessage(role, text, sources = []) {
       const log = document.getElementById('mh-chat-log');
       if (!log) return;
       const row = document.createElement('div');
@@ -8563,16 +8563,14 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         : `<span class="mh-msg-avatar"><img src="images/bot-avatar.png" alt="" /></span>`;
 
       row.innerHTML = `${avatarHtml}<div class="mh-bubble">${mhParagraphs(text)}</div>`;
-      if (arguments[2]?.length) {
-        const sources = arguments[2].filter((source) => source && /^https?:\/\//i.test(source.uri || '')).slice(0, 5);
-        if (sources.length) {
+      const sourceList = sources.filter((source) => source && /^https?:\/\//i.test(source.uri || '')).slice(0, 5);
+      if (sourceList.length) {
           const sourceBox = document.createElement('div');
           sourceBox.className = 'chat-sources';
-          sourceBox.innerHTML = '<strong>Sources</strong>' + sources
+          sourceBox.innerHTML = '<strong>Sources</strong>' + sourceList
             .map((source) => `<a href="${mhEsc(source.uri)}" target="_blank" rel="noopener noreferrer">${mhEsc(source.title || source.uri)}</a>`)
             .join('');
           row.querySelector('.mh-bubble')?.appendChild(sourceBox);
-        }
       }
       log.appendChild(row);
       mhScrollBottom();

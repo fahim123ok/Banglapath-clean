@@ -8998,6 +8998,18 @@ select:focus-visible,
     width: 100% !important;
   }
 
+  /* Explore is a full mobile page; the desktop chat drawer must not sit on top of it. */
+  .app.on-discover aside.chat,
+  .app.on-discover .chat-scrim,
+  .app.on-discover .chat-reveal {
+    display: none !important;
+    pointer-events: none !important;
+  }
+
+  .app.on-discover #page-discover {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom)) !important;
+  }
+
   /* Show mobile home */
   .mobile-home {
     display: flex;

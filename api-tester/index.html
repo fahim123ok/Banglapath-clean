@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Gemini API Tester</title>
+<title>Gemini Model Lab</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: system-ui, sans-serif; background: #0f0f11; color: #e2e2e2; height: 100vh; display: flex; flex-direction: column; }
@@ -59,18 +59,18 @@
 <body>
 
 <div class="top">
-  <h1>🔬 Gemini API Tester</h1>
+  <h1>🔬 Gemini Model Lab</h1>
   <div class="key-wrap">
     <input type="text" id="apiKey" placeholder="Paste your API key here  e.g. AQ.Ab8RN6..." autocomplete="off" spellcheck="false" />
   </div>
   <div class="model-wrap">
     <select id="modelSelect">
+      <option value="gemini-3.5-flash-lite" selected>gemini-3.5-flash-lite</option>
       <option value="gemini-3.6-flash">gemini-3.6-flash</option>
       <option value="gemini-3.8-flash">gemini-3.8-flash</option>
       <option value="gemini-flash-latest">gemini-flash-latest</option>
       <option value="gemini-3.5-flash">gemini-3.5-flash</option>
       <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
-      <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite</option>
       <option value="gemini-flash-lite-latest">gemini-flash-lite-latest</option>
       <option value="gemini-2.5-flash">gemini-2.5-flash</option>
       <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>

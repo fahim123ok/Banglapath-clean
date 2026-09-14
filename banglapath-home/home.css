@@ -12085,7 +12085,7 @@ select:focus-visible,
 .mobile-plan-fab {
   position: fixed;
   right: 18px;
-  bottom: calc(72px + env(safe-area-inset-bottom, 12px));
+  bottom: calc(142px + env(safe-area-inset-bottom, 12px));
   z-index: 9998;
   display: inline-flex;
   align-items: center;
@@ -12274,6 +12274,119 @@ body:not(.is-launched) .mobile-plan-fab {
   flex-direction: column;
   gap: 8px;
 }
+
+.myplan-period-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 2px;
+}
+
+.myplan-period-badge {
+  font-size: 13px;
+  font-weight: 800;
+  color: #14532d;
+}
+
+.myplan-period-time {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.myplan-period-card {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06);
+}
+
+.myplan-period-card .myplan-task-list {
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+}
+
+.myplan-period-image {
+  width: 92px;
+  min-height: 84px;
+  align-self: stretch;
+  flex: none;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.myplan-todo-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 3px 0;
+  color: #334155;
+  cursor: pointer;
+}
+
+.myplan-todo-row.is-done .myplan-task-label {
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+.myplan-task-label {
+  min-width: 0;
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.myplan-check-btn {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  padding: 0;
+  border: 1.5px solid #94a3b8;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.myplan-check-btn svg {
+  width: 12px;
+  height: 12px;
+  opacity: 0;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 3;
+}
+
+.myplan-todo-row.is-done .myplan-check-btn {
+  border-color: #059669;
+  background: #059669;
+}
+
+.myplan-todo-row.is-done .myplan-check-btn svg { opacity: 1; }
+
+.myplan-del-task-btn {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.myplan-del-task-btn svg { width: 14px; height: 14px; }
+.myplan-del-task-btn:hover { color: #ef4444; }
 
 .myplan-period-heading {
   font-size: 15px;

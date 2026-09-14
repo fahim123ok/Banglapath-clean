@@ -2462,6 +2462,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     if (!root) return;
 
     applyLegendStyles();
+    updateMobilePlanFabBadge();
 
     // ---- Mobile view ----
     if (window.innerWidth <= 768) {
@@ -3280,20 +3281,24 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       return `
         <div class="myplan-period-group" data-period="${pKey}">
           <div class="myplan-period-head">
-            <span class="myplan-period-badge ${p.theme || ('period-' + pKey)}">${p.period} • ${p.time}</span>
+            <span class="myplan-period-badge ${p.theme || ('period-' + pKey)}">${p.period}</span>
+            <span class="myplan-period-time">${p.time}</span>
           </div>
-          <div class="myplan-task-list">
-            ${p.tasks.map(t => `
-              <div class="myplan-todo-row ${t.done ? 'is-done' : ''}" data-day="${selectedDay}" data-period="${pKey}" data-task-id="${t.id}">
-                <button type="button" class="myplan-check-btn" aria-label="Toggle task">
-                  <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
-                </button>
-                <span class="myplan-task-label">${esc(t.text)}</span>
-                <button type="button" class="myplan-del-task-btn" data-action="del-task" title="Delete task" aria-label="Delete task">
-                  <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                </button>
-              </div>
-            `).join('')}
+          <div class="myplan-period-card">
+            <div class="myplan-task-list">
+              ${p.tasks.map(t => `
+                <div class="myplan-todo-row ${t.done ? 'is-done' : ''}" data-day="${selectedDay}" data-period="${pKey}" data-task-id="${t.id}">
+                  <button type="button" class="myplan-check-btn" aria-label="Toggle task">
+                    <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+                  </button>
+                  <span class="myplan-task-label">${esc(t.text)}</span>
+                  <button type="button" class="myplan-del-task-btn" data-action="del-task" title="Delete task" aria-label="Delete task">
+                    <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+            <img class="myplan-period-image" src="${esc(p.image || 'images/places/sajek.jpg')}" alt="${esc(p.period)} plan" />
           </div>
         </div>
       `;
@@ -3339,7 +3344,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
             saveItinerariesToStorage();
             renderMobileMyPlanModalBody();
             updateMobilePlanFabBadge();
-            if ($('#page-planner')?.classList.contains('is-active')) {
+            if ($('#page-planner') && !$('#page-planner').hidden) {
               renderPlanner();
             }
             showToast('Task removed from plan');
@@ -3443,7 +3448,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         updateMobilePlanFabBadge();
         if (addForm) addForm.hidden = true;
         if (addToggle) addToggle.hidden = false;
-        if ($('#page-planner')?.classList.contains('is-active')) {
+        if ($('#page-planner') && !$('#page-planner').hidden) {
           renderPlanner();
         }
         showToast(`Added to ${dayPlan[pKey].period}!`);

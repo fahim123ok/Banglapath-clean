@@ -560,6 +560,12 @@ The calculation uses the Haversine formula and the place's latitude/longitude.
 - Book now
 - Ask AI Guide
 
+### Mobile PDP behaviour
+
+On a phone, tapping a destination card opens the full Place Detail Page directly rather than opening the AI panel first. The PDP uses a dedicated scroll container so the visitor can inspect the complete gallery, facts, actions, related places, and food video content without the bottom navigation blocking the page.
+
+The AI remains available through a floating guide button. This keeps the destination information readable while still allowing the visitor to ask about the exact place whenever they need help.
+
 ### Google Maps directions
 
 Clicking `View in map`:
@@ -698,6 +704,23 @@ The Trip Planner helps the visitor turn inspiration into a structured plan.
 - Current date awareness
 - Saved itinerary data
 - AI-assisted planning prompts
+- Morning, afternoon, evening, and night time blocks
+- Reorderable itinerary periods
+- Add, complete, uncomplete, and delete task actions
+- Persistent local itinerary storage
+- Shared checklist access from a floating Plan button
+
+### Shared floating checklist
+
+The visitor can open the current day's tasks without leaving the page. The same checklist is available from both the Trip Planner and a floating Plan button on desktop and mobile.
+
+- Tasks created in Trip Planner appear automatically in the floating checklist.
+- Tasks created in the floating checklist appear in Trip Planner.
+- Tapping a task marks it complete with a checkmark and strikethrough.
+- Tapping it again restores it to an active task.
+- Tasks can be deleted from the checklist and the change is reflected in the planner.
+- The panel groups tasks by time of day and includes the itinerary image for each period.
+- If a saved current-day plan is completely empty, the app provides a small starter itinerary without overwriting existing custom work.
 
 ### Example use
 
@@ -784,6 +807,35 @@ The app can show:
 - API failure message
 - Translation fallback
 - AI service failure message
+
+---
+
+## 6.13 Current Product Experience and Responsive Design
+
+The current product identity is **Way Bangladesh**, with the visible brand treatment using green `Bangla` and red `Desh`. The app preserves the Bangladesh-first voice while making the interface more practical for repeated use.
+
+### Responsive experience
+
+- Desktop uses a navigation rail, content shell, and contextual AI panel.
+- Mobile uses a dedicated home layout with a bottom navigation bar.
+- Mobile subviews open as full-width pages rather than squeezed desktop columns.
+- The Plan floating control sits on the left and the AI floating control sits on the right to keep both actions reachable without overlap.
+- Home and the dedicated AI Assistant page stay focused on their primary experience; other pages can open the AI guide on demand.
+- Mobile transitions reduce heavy cinematic animation so the core app becomes usable quickly on slower phones.
+
+### Contextual AI access
+
+The AI guide is available as a floating action on Explore, place details, Trip Planner, Translator, Saved, and Profile. It opens as a focused mobile drawer or panel instead of covering the underlying page by default.
+
+This creates a clear product rule:
+
+```text
+Read the page first -> Ask Way Bangladesh AI when needed
+```
+
+### Product continuity
+
+The connected experience now follows the same pattern across discovery, planning, safety, translation, and memory keeping. A visitor can discover a place, inspect its PDP, add it to a day plan, complete tasks, ask the AI for context, and later preserve the journey in the 3D Travel Memory Book.
 
 ---
 

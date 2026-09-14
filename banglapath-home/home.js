@@ -3293,7 +3293,8 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
                   </button>
                   <span class="myplan-task-label">${esc(t.text)}</span>
                   <button type="button" class="myplan-del-task-btn" data-action="del-task" title="Delete task" aria-label="Delete task">
-                    <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>
+                    <span class="myplan-delete-text">Delete</span>
                   </button>
                 </div>
               `).join('')}

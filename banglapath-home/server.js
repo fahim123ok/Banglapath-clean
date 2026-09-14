@@ -14,11 +14,11 @@ const BOOK_DIST = path.resolve(ROOT, '../book/dist');
 const HOSP_DIST = path.resolve(ROOT, '../Hospital finding/dist');
 const PORT = Number(process.env.PORT) || 3000;
 
-/* gemini-2.5-flash leads because of generous quota and full googleSearch support.
+/* gemini-3.5-flash-lite leads for fast, lightweight chat responses.
  * The rest are tried in order when one is rate-limited. */
 const MODELS = [
   ...(process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : []),
-  'gemini-2.5-flash',
+  'gemini-3.5-flash-lite',
   'gemini-2.5-flash-lite',
 ].filter((m, i, all) => all.indexOf(m) === i);
 

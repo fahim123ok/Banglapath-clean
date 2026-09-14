@@ -480,6 +480,9 @@ const BanglaPath = (() => {
     $('#app').classList.toggle('on-translator', view === 'translator');
     $('#app').classList.toggle('on-saved', view === 'saved');
     $('#app').classList.toggle('on-profile', view === 'profile');
+    document.querySelectorAll('.mh-nav-item[data-mh-view]').forEach((btn) => {
+      btn.classList.toggle('is-active', btn.dataset.mhView === view);
+    });
   }
 
   /* ---------------- persona ---------------- */
@@ -2347,6 +2350,40 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     } catch (e) {}
   }
   loadItinerariesFromStorage();
+
+  // Restore a useful starter day only when the saved day was completely emptied.
+  const todayPlan = itinerariesByDay[realTodayDay];
+  const todayTaskCount = todayPlan
+    ? Object.keys(todayPlan)
+      .filter((key) => todayPlan[key] && Array.isArray(todayPlan[key].tasks))
+      .reduce((count, key) => count + todayPlan[key].tasks.length, 0)
+    : 0;
+  if (todayPlan && todayTaskCount === 0) {
+    todayPlan.morning = {
+      period: 'Morning',
+      time: '09:00 AM',
+      icon: 'sun',
+      theme: 'period-morning',
+      image: 'images/places/lalbagh.jpg',
+      tasks: [
+        { id: `starter_${realTodayDay}_1`, text: 'Visit a heritage landmark', done: false },
+        { id: `starter_${realTodayDay}_2`, text: 'Capture a few travel photos', done: false },
+      ],
+    };
+    todayPlan.afternoon = {
+      period: 'Afternoon',
+      time: '01:30 PM',
+      icon: 'sun-ray',
+      theme: 'period-afternoon',
+      image: 'images/categories/streetfood.jpg',
+      tasks: [
+        { id: `starter_${realTodayDay}_3`, text: 'Try one authentic local dish', done: false },
+        { id: `starter_${realTodayDay}_4`, text: 'Walk through a nearby local street', done: false },
+      ],
+    };
+    todayPlan.periodOrder = ['morning', 'afternoon'];
+    saveItinerariesToStorage();
+  }
 
   function getUpcomingTripsData() {
     const curM = monthNamesShort[calCurrentMonth] || 'Sep';

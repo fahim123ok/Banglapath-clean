@@ -9129,7 +9129,7 @@ select:focus-visible,
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    padding-bottom: 90px;
+    padding-bottom: calc(156px + env(safe-area-inset-bottom));
   }
   .mh-scroll::-webkit-scrollbar { display: none; }
 
@@ -9351,7 +9351,7 @@ select:focus-visible,
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    padding: 4px 2px 4px;
+    padding: 4px 16px 18px 2px;
     margin: 0 -4px;
   }
   .mh-cards-row::-webkit-scrollbar { display: none; }
@@ -9547,7 +9547,7 @@ select:focus-visible,
     -webkit-backdrop-filter: blur(16px);
     border-top: 1px solid rgba(226,232,240,0.8);
     position: fixed;
-    bottom: max(72px, calc(72px + env(safe-area-inset-bottom)));
+    bottom: max(76px, calc(76px + env(safe-area-inset-bottom)));
     left: 0;
     right: 0;
     width: 100%;
@@ -10033,6 +10033,13 @@ select:focus-visible,
     margin: 0; /* Remove any margins */
     padding: 8px 0 max(14px, env(safe-area-inset-bottom)) !important;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .bp-network-error-toast,
+  .bp-toast {
+    bottom: max(154px, calc(154px + env(safe-area-inset-bottom)));
+    max-width: calc(100vw - 28px);
+    text-align: center;
   }
 
   body.is-launched .mh-bottom-nav {

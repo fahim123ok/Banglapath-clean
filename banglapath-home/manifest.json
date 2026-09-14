@@ -1,6 +1,6 @@
 {
-  "name": "BanglaPath - Explore Bangladesh",
-  "short_name": "BanglaPath",
+  "name": "Way Bangladesh - Explore Bangladesh",
+  "short_name": "Way Bangladesh",
   "description": "AI-powered Bangladesh travel guide",
   "start_url": "/",
   "display": "standalone",

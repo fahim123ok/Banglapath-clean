@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🇧🇩 BanglaPath - Bangladesh Travel AI Guide
+# 🇧🇩 Way Bangladesh - Bangladesh Travel AI Guide
 
 **An immersive, culturally authentic travel companion powered by Gemini AI**
 

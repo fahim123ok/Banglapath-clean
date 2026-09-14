@@ -504,6 +504,8 @@ function bindTapOrClick(el, handler) {
 function launch(fast = false) {
   if (launched) return;
   launched = true;
+  // Keep phones responsive by skipping the heavy cinematic transition.
+  if (window.matchMedia('(max-width: 768px)').matches) fast = true;
   cancelAutoScroll();
 
   // Capture user name / email if provided
@@ -578,6 +580,7 @@ function launch(fast = false) {
     document.body.classList.add('is-launched');
     tigerVideo?.pause();
     deerVideo?.pause();
+    sc?.querySelectorAll('video').forEach((video) => video.pause());
     revealMobileNav();
     doEnterHome();
     return;

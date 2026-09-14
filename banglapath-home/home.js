@@ -1,5 +1,5 @@
 /* ============================================================
-   BanglaPath home screen: map pins, place rails and the
+  Way Bangladesh home screen: map pins, place rails and the
    "I am Bangladesh" chat guide.
    ============================================================ */
 
@@ -497,7 +497,7 @@ const BanglaPath = (() => {
 
   const systemPrompt = () => {
     const dateInfo = getSystemDateInfo();
-    return `You ARE Bangladesh. Not an assistant that knows about Bangladesh — the country itself, speaking in first person to a traveller inside the BanglaPath app.
+    return `You ARE Bangladesh. Not an assistant that knows about Bangladesh — the country itself, speaking in first person to a traveller inside the Way Bangladesh app.
 
 VOICE & KAOMOJIS (MANDATORY IN EVERY LINE):
 - Warm, playful, caring, enthusiastic, and culturally authentic.
@@ -1748,7 +1748,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
           <span class="pdp-pill-circle"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
         </button>` : ''}
 
-        <button class="pdp-pill-btn pdp-ai-btn ${isFood ? 'pdp-ai-food-hero-btn' : ''}" type="button" id="pdp-ask-ai" data-id="${p.id}" aria-label="Ask BanglaPath AI about this ${isFood ? 'dish' : 'place'}">
+        <button class="pdp-pill-btn pdp-ai-btn ${isFood ? 'pdp-ai-food-hero-btn' : ''}" type="button" id="pdp-ask-ai" data-id="${p.id}" aria-label="Ask Way Bangladesh AI about this ${isFood ? 'dish' : 'place'}">
           <span class="pdp-pill-left">
             <svg viewBox="0 0 24 24" class="pdp-pill-icon" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
             <span class="pdp-pill-label">${isFood ? 'Ask AI Food Guide' : 'Ask AI Guide'}</span>
@@ -2601,7 +2601,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
                 <img src="images/bot-avatar.png" alt="BanglaPath AI" />
               </div>
               <div class="planner-ai-meta">
-                <h3 class="planner-ai-title">BanglaPath AI</h3>
+                <h3 class="planner-ai-title">Way Bangladesh AI</h3>
                 <span class="planner-ai-status">Online • Trip Assistant</span>
               </div>
             </div>
@@ -2611,7 +2611,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
               </div>
             </div>
             <form class="planner-ai-form" id="planner-ai-form">
-              <input class="planner-ai-input" id="planner-ai-input" type="text" placeholder="Ask BanglaPath AI..." autocomplete="off" />
+                <input class="planner-ai-input" id="planner-ai-input" type="text" placeholder="Ask Way Bangladesh AI..." autocomplete="off" />
               <button class="planner-ai-mic" type="button" id="planner-ai-mic" title="Voice assistant" aria-label="Voice input">
                 <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>
               </button>
@@ -3067,7 +3067,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         try { activePlannerRecog.abort(); } catch (e) {}
         activePlannerRecog = null;
         if (micBtn) micBtn.classList.remove('is-recording');
-        if (plannerAiInput) plannerAiInput.placeholder = 'Ask BanglaPath AI...';
+        if (plannerAiInput) plannerAiInput.placeholder = 'Ask Way Bangladesh AI...';
         showToast('🔇 Planner microphone turned off.');
         return;
       }
@@ -3094,12 +3094,12 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         rec.onend = () => {
           activePlannerRecog = null;
           if (micBtn) micBtn.classList.remove('is-recording');
-          if (plannerAiInput) plannerAiInput.placeholder = 'Ask BanglaPath AI...';
+          if (plannerAiInput) plannerAiInput.placeholder = 'Ask Way Bangladesh AI...';
         };
         rec.onerror = () => {
           activePlannerRecog = null;
           if (micBtn) micBtn.classList.remove('is-recording');
-          if (plannerAiInput) plannerAiInput.placeholder = 'Ask BanglaPath AI...';
+          if (plannerAiInput) plannerAiInput.placeholder = 'Ask Way Bangladesh AI...';
         };
         rec.start();
       } catch (e) {
@@ -6083,7 +6083,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   let assistantChat = [
     {
       role: 'bot',
-      text: "Assalamu alaikum! I am your BanglaPath AI travel companion. Ask me anything about Bangladesh's 64 districts, authentic cuisine, itineraries, or local customs.",
+      text: "Assalamu alaikum! I am your Way Bangladesh AI travel companion. Ask me anything about Bangladesh's 64 districts, authentic cuisine, itineraries, or local customs.",
       time: 'Just now',
       places: undefined,
       reaction: null,
@@ -6103,7 +6103,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
           <div class="asst-mascot-circle">
             <img src="images/bot-avatar.png" alt="BanglaPath AI Mascot" />
           </div>
-          <h1 class="asst-screen-title">BanglaPath AI</h1>
+            <h1 class="asst-screen-title">Way Bangladesh AI</h1>
           <p class="asst-screen-subtitle">Hey Fahim! আমি আপনার ভ্রমণ সঙ্গী । আপনি কী জানতে চান?</p>
           <div style="margin-top: 10px; display: flex; justify-content: center;">
             <button type="button" class="asst-reset-chat-btn" id="asst-reset-chat-btn" title="Start fresh conversation">
@@ -6808,7 +6808,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         <div class="profile-footer-bar">
           <div class="profile-footer-status">
             <div class="profile-footer-status-dot"></div>
-            <span>BanglaPath Live Guide Synchronized • Connected to Gemini Engine</span>
+            <span>Way Bangladesh Live Guide Synchronized • Connected to Gemini Engine</span>
           </div>
           <div class="profile-footer-actions">
             <button type="button" class="profile-subtle-btn" id="prof-clear-cache-btn">Clear Offline Cache</button>
@@ -6821,7 +6821,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       <div class="profile-mobile-layout">
         <!-- Top Leaf Banner Image -->
         <div class="pm-banner">
-          <img src="https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800&auto=format&fit=crop&q=80" alt="BanglaPath Banner" />
+          <img src="https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?w=800&auto=format&fit=crop&q=80" alt="Way Bangladesh Banner" />
           <div class="pm-banner-overlay"></div>
         </div>
 
@@ -7739,7 +7739,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
             <button type="button" id="checklist-modal-close" style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.18); border: 0; color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
               <svg viewBox="0 0 24 24" width="16" height="16"><path d="M18 6L6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
             </button>
-            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85;">BanglaPath Travel Essentials</div>
+            <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.85;">Way Bangladesh Travel Essentials</div>
             <h3 style="font-size: 19px; font-weight: 800; margin: 4px 0 0; color: #ffffff;">🎒 Expedition Checklist</h3>
             <div style="margin-top: 12px;">
               <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; margin-bottom: 5px; opacity: 0.95;">

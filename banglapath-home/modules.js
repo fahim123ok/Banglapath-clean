@@ -366,7 +366,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
-              <span class="book-cover-crest-text">BanglaPath</span>
+              <span class="book-cover-crest-text">Way Bangladesh</span>
             </div>
           </div>
 

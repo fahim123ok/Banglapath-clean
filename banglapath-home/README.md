@@ -1,4 +1,4 @@
-# BanglaPath
+# Way Bangladesh
 
 A cinematic entry into a Bangladesh travel explorer.
 

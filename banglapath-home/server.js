@@ -1,4 +1,4 @@
-/* Static file server + Gemini proxy for BanglaPath.
+/* Static file server + Gemini proxy for Way Bangladesh.
  *
  * Run:  GEMINI_API_KEY=... node server.js
  * The key stays in this process; the browser only ever calls POST /api/chat.
@@ -229,7 +229,7 @@ async function chat(req, res) {
   });
   const isoDate = now.toISOString().split('T')[0];
 
-  const BASE_SYSTEM_INSTRUCTION = `You are BanglaPath AI — the premier travel, cultural, and smart life companion for Bangladesh.
+  const BASE_SYSTEM_INSTRUCTION = `You are Way Bangladesh AI — the premier travel, cultural, and smart life companion for Bangladesh.
 
 REAL-WORLD CURRENT DATE & LIVE SEARCH:
 - TODAY'S REAL-WORLD DATE IS: ${currentDateStr} (${isoDate}).
@@ -647,7 +647,7 @@ http
     serveStatic(req, res).catch((err) => json(res, 500, { error: err.message }));
   })
   .listen(PORT, '0.0.0.0', () => {
-    console.log(`BanglaPath on http://0.0.0.0:${PORT}`);
+    console.log(`Way Bangladesh on http://0.0.0.0:${PORT}`);
     if (!process.env.GEMINI_API_KEY && process.env.NODE_ENV !== 'production') console.warn('GEMINI_API_KEY is not set — the chat will return 503.');
   });
 

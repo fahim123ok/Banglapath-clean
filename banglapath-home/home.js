@@ -466,7 +466,6 @@ const BanglaPath = (() => {
         if (appEl) { appEl.style.setProperty('display', 'flex', 'important'); appEl.hidden = false; }
       }
     }
-
     $('#page-home').hidden = view !== 'home';
     $('#page-discover').hidden = view !== 'explore';
     $('#page-planner').hidden = view !== 'planner';
@@ -3238,7 +3237,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
 
   /* ---------------- Mobile Floating "My Plan" To-Do Modal ---------------- */
   function updateMobilePlanFabBadge() {
-    const badge = $('#mobile-plan-badge');
+    const badge = $('#mobile-plan-fab-badge');
     if (!badge) return;
     const plan = itinerariesByDay[selectedDay] || itinerariesByDay[realTodayDay];
     if (!plan) {
@@ -3258,7 +3257,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
 
   function renderMobileMyPlanModalBody() {
     const body = $('#myplan-sheet-body');
-    const dayLabel = $('#myplan-sheet-day-label');
+    const dayLabel = $('#myplan-sheet-date');
     const dayData = getOrGenerateDayPlan(selectedDay);
 
     if (dayLabel) {
@@ -3370,10 +3369,12 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   function setupMobileMyPlan() {
     const fab = $('#mobile-plan-fab');
     const backdrop = $('#myplan-modal-backdrop');
-    const closeBtn = $('#myplan-modal-close');
-    const addForm = $('#myplan-add-form');
-    const addInput = $('#myplan-new-task-input');
-    const periodSelect = $('#myplan-period-select');
+    const closeBtn = $('#myplan-sheet-close');
+    const addToggle = $('#myplan-add-toggle-btn');
+    const addForm = $('#myplan-quick-add-form');
+    const addInput = $('#myplan-task-input');
+    const periodSelect = $('#myplan-slot-select');
+    const cancelBtn = $('#myplan-cancel-btn');
 
     updateMobilePlanFabBadge();
 
@@ -3395,6 +3396,23 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         if (e.target === backdrop) {
           closeMobileMyPlanModal();
         }
+      });
+    }
+
+    if (addToggle && !addToggle.dataset.listenerAttached) {
+      addToggle.dataset.listenerAttached = 'true';
+      addToggle.addEventListener('click', () => {
+        addToggle.hidden = true;
+        if (addForm) addForm.hidden = false;
+        addInput?.focus();
+      });
+    }
+
+    if (cancelBtn && !cancelBtn.dataset.listenerAttached) {
+      cancelBtn.dataset.listenerAttached = 'true';
+      cancelBtn.addEventListener('click', () => {
+        if (addForm) addForm.hidden = true;
+        if (addToggle) addToggle.hidden = false;
       });
     }
 
@@ -3423,6 +3441,8 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         if (addInput) addInput.value = '';
         renderMobileMyPlanModalBody();
         updateMobilePlanFabBadge();
+        if (addForm) addForm.hidden = true;
+        if (addToggle) addToggle.hidden = false;
         if ($('#page-planner')?.classList.contains('is-active')) {
           renderPlanner();
         }
@@ -3991,6 +4011,10 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       }
       if (mhEl) {
         mhEl.style.display = 'none';
+      }
+      if (appEl) {
+        appEl.classList.add('chat-hidden');
+        appEl.classList.remove('chat-open');
       }
     }
 

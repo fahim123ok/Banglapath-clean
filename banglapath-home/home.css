@@ -12102,6 +12102,13 @@ select:focus-visible,
   min-height: 44px;
 }
 
+@media (max-width: 768px) {
+  .mobile-plan-fab {
+    left: 16px;
+    right: auto;
+  }
+}
+
 body:not(.is-launched) .mobile-plan-fab {
   display: none !important;
 }

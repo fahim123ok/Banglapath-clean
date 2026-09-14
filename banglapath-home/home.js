@@ -8563,6 +8563,17 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         : `<span class="mh-msg-avatar"><img src="images/bot-avatar.png" alt="" /></span>`;
 
       row.innerHTML = `${avatarHtml}<div class="mh-bubble">${mhParagraphs(text)}</div>`;
+      if (arguments[2]?.length) {
+        const sources = arguments[2].filter((source) => source && /^https?:\/\//i.test(source.uri || '')).slice(0, 5);
+        if (sources.length) {
+          const sourceBox = document.createElement('div');
+          sourceBox.className = 'chat-sources';
+          sourceBox.innerHTML = '<strong>Sources</strong>' + sources
+            .map((source) => `<a href="${mhEsc(source.uri)}" target="_blank" rel="noopener noreferrer">${mhEsc(source.title || source.uri)}</a>`)
+            .join('');
+          row.querySelector('.mh-bubble')?.appendChild(sourceBox);
+        }
+      }
       log.appendChild(row);
       mhScrollBottom();
       return row;
@@ -8635,8 +8646,14 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
 
     const _origSend = send;
 
+    let mobilePendingRequest = null;
+
     async function mobileSend(text, opts) {
       if (!text.trim()) return;
+      if (busy) {
+        mobilePendingRequest = { text, opts };
+        return;
+      }
       const displayText = (opts && opts.display) ? opts.display : text;
       mhAddMessage('user', displayText);
 
@@ -8644,14 +8661,13 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       try {
         // Reuse the original desktop send() logic but also mirror output here
         // We hook into the shared history + askGemini flow
-        if (busy) return;
         history.push({ role: 'user', text });
         saveChatHistory();
         document.querySelector('.chips')?.remove();
         busy = true;
-        const { reply, places } = await askGemini(history.slice(-30));
+        const { reply, places, sources } = await askGemini(history.slice(-30));
         if (typing) typing.remove();
-        mhAddMessage('bot', reply);
+        mhAddMessage('bot', reply, sources);
         history.push({ role: 'model', text: reply });
         saveChatHistory();
         mhRenderCards(places);
@@ -8667,6 +8683,11 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         busy = false;
         const sendBtn = document.querySelector('.mh-send-btn');
         if (sendBtn) sendBtn.disabled = false;
+        if (mobilePendingRequest) {
+          const nextRequest = mobilePendingRequest;
+          mobilePendingRequest = null;
+          window.setTimeout(() => mobileSend(nextRequest.text, nextRequest.opts), 80);
+        }
       }
     }
 

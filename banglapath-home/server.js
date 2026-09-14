@@ -274,9 +274,12 @@ KNOWLEDGE SCOPE:
     systemInstruction: { parts: [{ text: safeSystemPrompt }] },
   };
 
+  const requestText = sanitizedContents.map((turn) => turn.parts.map((part) => part.text).join(' ')).join(' ');
+  const needsWebSearch = /\b(search|web|latest|current|today|news|weather|visa|price|schedule|opening hours|recent|2026)\b/i.test(requestText);
+
   // Groq is the fast primary provider. Gemini remains the fallback when Groq
   // is unavailable, rate-limited, or returns an unusable response.
-  if (GROQ_API_KEY) {
+  if (GROQ_API_KEY && !needsWebSearch) {
     try {
       const groqMessages = [
         { role: 'system', content: `${safeSystemPrompt}\nReturn only valid json with this shape: {"reply":"...","places":[]}.` },

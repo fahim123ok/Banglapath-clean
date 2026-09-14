@@ -3395,6 +3395,51 @@ select:focus-visible,
     pointer-events: auto !important;
   }
 
+  /* Final mobile chat contract: hidden until the floating AI button is tapped. */
+  .app.on-discover aside.chat,
+  .app.on-place aside.chat,
+  .app.on-planner aside.chat,
+  .app.on-translator aside.chat,
+  .app.on-saved aside.chat,
+  .app.on-profile aside.chat {
+    display: none !important;
+  }
+
+  .app.chat-open.on-discover aside.chat,
+  .app.chat-open.on-place aside.chat,
+  .app.chat-open.on-planner aside.chat,
+  .app.chat-open.on-translator aside.chat,
+  .app.chat-open.on-saved aside.chat,
+  .app.chat-open.on-profile aside.chat {
+    display: flex !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 10001 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    transform: none !important;
+    background: #ffffff !important;
+  }
+
+  .app.on-discover .chat-reveal,
+  .app.on-place .chat-reveal,
+  .app.on-planner .chat-reveal,
+  .app.on-translator .chat-reveal,
+  .app.on-saved .chat-reveal,
+  .app.on-profile .chat-reveal {
+    display: grid !important;
+    position: fixed !important;
+    right: 16px !important;
+    bottom: calc(82px + env(safe-area-inset-bottom)) !important;
+    z-index: 10002 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  .app.chat-open .chat-reveal { display: none !important; }
+
   .app.on-place .chat-reveal {
     display: grid !important;
     right: 16px !important;

@@ -14,12 +14,6 @@ const BOOK_DIST = path.resolve(ROOT, '../book/dist');
 const HOSP_DIST = path.resolve(ROOT, '../Hospital finding/dist');
 const PORT = Number(process.env.PORT) || 3000;
 
-// Fallback key is intentionally blank in the repo. Use the Render/Vercel
-// environment variable for the real Gemini key in deployment. This keeps the
-// GitHub repository free of any API secret.
-const FALLBACK_GEMINI_API_KEY = process.env.GEMINI_API_KEY_FALLBACK || 'SET_GEMINI_KEY_IN_RENDER_ENV';
-const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim() || (process.env.GEMINI_API_KEY_FALLBACK || '').trim() || FALLBACK_GEMINI_API_KEY.trim();
-
 /* gemini-2.5-flash leads because of generous quota and full googleSearch support.
  * The rest are tried in order when one is rate-limited. */
 const MODELS = [
@@ -47,6 +41,10 @@ for (const envPath of [path.join(ROOT, '.env'), path.join(process.cwd(), '.env')
     /* no .env, fall back to the ambient environment */
   }
 }
+
+// Read the key after loading the local environment file.
+const FALLBACK_GEMINI_API_KEY = process.env.GEMINI_API_KEY_FALLBACK || 'SET_GEMINI_KEY_IN_RENDER_ENV';
+const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim() || (process.env.GEMINI_API_KEY_FALLBACK || '').trim() || FALLBACK_GEMINI_API_KEY.trim();
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',

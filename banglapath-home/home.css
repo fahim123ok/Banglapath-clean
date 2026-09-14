@@ -554,6 +554,7 @@ select:focus-visible,
 
 .brand-a { color: var(--green-700); }
 .brand-b { color: var(--red-brand); }
+.brand-muted { color: var(--ink); }
 
 .brand-mark {
   width: 14px;
@@ -9205,6 +9206,7 @@ select:focus-visible,
 
   .mh-brand-a { color: #166534; }
   .mh-brand-b { color: #dc2626; }
+  .mh-brand-muted { color: #334155; }
 
   .mh-brand-mark {
     width: 14px;

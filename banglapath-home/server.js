@@ -46,7 +46,7 @@ for (const envPath of [path.join(ROOT, '.env'), path.join(process.cwd(), '.env')
 const FALLBACK_GEMINI_API_KEY = process.env.GEMINI_API_KEY_FALLBACK || 'SET_GEMINI_KEY_IN_RENDER_ENV';
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim() || (process.env.GEMINI_API_KEY_FALLBACK || '').trim() || FALLBACK_GEMINI_API_KEY.trim();
 const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
-const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'qwen/qwen3.8-27b';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -279,7 +279,7 @@ KNOWLEDGE SCOPE:
   if (GROQ_API_KEY) {
     try {
       const groqMessages = [
-        { role: 'system', content: safeSystemPrompt },
+        { role: 'system', content: `${safeSystemPrompt}\nReturn only valid json with this shape: {"reply":"...","places":[]}.` },
         ...sanitizedContents.map((turn) => ({
           role: turn.role === 'model' ? 'assistant' : 'user',
           content: turn.parts.map((part) => part.text).join('\n'),

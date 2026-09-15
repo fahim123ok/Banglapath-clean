@@ -791,6 +791,33 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;*/
     scrollChat();
   }
 
+  function normalizePlaceText(text) {
+    return String(text || '')
+      .toLowerCase()
+      .replace(/\bcox[’']s\b/g, 'cox')
+      .replace(/[’']/g, '')
+      .replace(/[^a-z0-9\u0980-\u09ff]+/g, ' ')
+      .trim();
+  }
+
+  function detectPlaceCards(reply) {
+    const normalizedReply = ` ${normalizePlaceText(reply)} `;
+    if (!normalizedReply.trim()) return [];
+
+    return [...catalog.places]
+      .map((place, index) => {
+        const name = normalizePlaceText(place.name);
+        const id = normalizePlaceText(place.id);
+        const nameFound = name.length >= 4 && normalizedReply.includes(` ${name} `);
+        const idFound = id.length >= 4 && normalizedReply.includes(` ${id} `);
+        return { id: place.id, index, matched: nameFound || idFound, length: name.length };
+      })
+      .filter((place) => place.matched)
+      .sort((a, b) => b.length - a.length || a.index - b.index)
+      .slice(0, 2)
+      .map((place) => place.id);
+  }
+
   /* ---------------- conversation & persistent memory ---------------- */
 
   const CHAT_STORAGE_KEY = 'banglapath_ai_chat_history_v2';
@@ -836,7 +863,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;*/
       typing.remove();
       addMessage('bot', reply, webSearch ? sources : []);
       history.push({ role: 'model', text: reply });
-      renderSuggestions([]);
+      renderSuggestions(detectPlaceCards(reply));
     } catch (err) {
       clearTimeout(busyTimer);
       typing.remove();

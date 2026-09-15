@@ -146,6 +146,7 @@ const BanglaPath = (() => {
   let lastView = 'home';
   let busy = false;
   let started = false;
+  let pinRegistry = new Map();
 
   /* ---------------- RATE LIMITING ---------------- */
   let lastRequestTime = 0;
@@ -498,6 +499,8 @@ const BanglaPath = (() => {
   };
 
   const systemPrompt = () => {
+    return `You are Bangladesh speaking directly to a traveller. Be warm, outgoing, curious, playful, and helpful. Use a few cute kaomojis such as (✿◠‿◠), (★ω★), and (づ｡◕‿‿◕｡)づ. Help visitors become curious about Bangladesh, its places, food, culture, people, and travel experiences. Answer in the traveller's language, keep replies short and natural, and do not invent current facts. When asked about a place, explain what makes it special and give one practical tip. Reply with plain text only.`;
+    /*
     const dateInfo = getSystemDateInfo();
     return `You ARE Bangladesh. Not an assistant that knows about Bangladesh — the country itself, speaking in first person to a traveller inside the Way Bangladesh app.
 
@@ -553,16 +556,7 @@ When your answer would be helped by showing a place, put 1–2 ids in "places". 
 ${catalog.places.map((p) => `${p.id} = ${p.name}, ${p.district} (${p.tag})`).join('\n')}
 Leave "places" empty for greetings, small talk, or when you already showed the same place in the previous turn.
 
-Reply as JSON: {"reply": "...", "places": ["id"]}`;
-  };
-
-  const RESPONSE_SCHEMA = {
-    type: 'object',
-    properties: {
-      reply: { type: 'string' },
-      places: { type: 'array', items: { type: 'string' } },
-    },
-    required: ['reply'],
+Reply as JSON: {"reply": "...", "places": ["id"]}`;*/
   };
 
   /* ---------------- Gemini transport ---------------- */
@@ -574,11 +568,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       generationConfig: {
         temperature: 0.9,
         topP: 0.95,
-        maxOutputTokens: 2400,
-        // Otherwise thinking tokens eat the budget and the reply comes back empty.
-        thinkingConfig: MODEL.startsWith('gemini-3') ? { thinkingLevel: 'low' } : { thinkingBudget: 512 },
-        responseMimeType: 'application/json',
-        responseSchema: RESPONSE_SCHEMA,
+        maxOutputTokens: 500,
       },
     };
   }
@@ -598,20 +588,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   function parsePayload(raw) {
     const text = (raw?.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('').trim();
     if (!text) throw new Error('Empty response from the model.');
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = { reply: salvage(text), places: [] };
-    }
-    const ids = Array.isArray(data.places) ? data.places.filter((id) => byId.has(id)) : [];
-    const sources = (raw?.groundingMetadata?.groundingChunks || [])
-      .map((chunk) => chunk.web)
-      .filter((web) => web && /^https?:\/\//i.test(web.uri || ''))
-      .map((web) => ({ title: String(web.title || web.uri), uri: web.uri }))
-      .filter((source, index, all) => all.findIndex((item) => item.uri === source.uri) === index)
-      .slice(0, 5);
-    return { reply: String(data.reply || '').trim(), places: [...new Set(ids)].slice(0, 2), sources };
+    return { reply: text, places: [], sources: [] };
   }
 
   async function askGemini(turns) {
@@ -629,7 +606,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         if (data.error) throw new Error(data.error);
         const reply = String(data.reply || '').trim();
         if (!reply) throw new Error('The guide sent an empty reply.');
-        return { reply, places: (data.places || []).filter((id) => byId.has(id)).slice(0, 2), sources: data.sources || [] };
+        return { reply, places: [], sources: [] };
       }
       if (res.status !== 404) {
         // The proxy explains itself (quota, upstream timeout) — say that, not a status code.
@@ -810,7 +787,15 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
   /* ---------------- conversation & persistent memory ---------------- */
 
   const CHAT_STORAGE_KEY = 'banglapath_ai_chat_history_v2';
-  let pendingPinRequest = null;
+  let pendingPinRequests = [];
+
+  function queuePinRequest(pin, place) {
+    const key = `${pin?.id || 'unknown'}:${place?.id || 'unknown'}:${pin?.label || ''}`;
+    if (pendingPinRequests.some((item) => `${item.pin?.id || 'unknown'}:${item.place?.id || 'unknown'}:${item.pin?.label || ''}` === key)) {
+      return;
+    }
+    pendingPinRequests.push({ pin, place });
+  }
 
   function saveChatHistory() {
     // Kept in-memory for active session. Does not persist across refresh as requested.
@@ -839,12 +824,12 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     }, 20000);
 
     try {
-      const { reply, places, sources } = await askGemini(history.slice(-30));
+      const { reply } = await askGemini(history.slice(-10));
       clearTimeout(busyTimer);
       typing.remove();
-      addMessage('bot', reply, sources);
+      addMessage('bot', reply);
       history.push({ role: 'model', text: reply });
-      renderSuggestions(places);
+      renderSuggestions([]);
     } catch (err) {
       clearTimeout(busyTimer);
       typing.remove();
@@ -858,9 +843,8 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     } finally {
       clearTimeout(busyTimer);
       setBusy(false);
-      if (pendingPinRequest) {
-        const nextPin = pendingPinRequest;
-        pendingPinRequest = null;
+      if (pendingPinRequests.length) {
+        const nextPin = pendingPinRequests.shift();
         window.setTimeout(() => askAboutPin(nextPin.pin, nextPin.place), 80);
       }
     }
@@ -886,7 +870,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       chips.appendChild(b);
     });
     chatLog().appendChild(chips);
-    renderSuggestions(catalog.openingSuggestions);
+    renderSuggestions([]);
   }
 
   function initChatHistory() {
@@ -930,11 +914,28 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       { id: 'saintmartin', label: "Saint Martin's Island", x: 96.0, y: 84.0 }
     ];
     const pins = (catalog.pins && catalog.pins.length) ? catalog.pins : DEFAULT_PINS;
+    pinRegistry = new Map();
+
+    if (!frame.dataset.pinEventsBound) {
+      frame.addEventListener('click', (event) => {
+        const pinButton = event.target.closest('.pin');
+        if (!pinButton || !frame.contains(pinButton)) return;
+        const pinData = pinRegistry.get(pinButton.dataset.id);
+        if (!pinData) return;
+        event.preventDefault();
+        event.stopPropagation();
+        askAboutPin(pinData.pin, pinData.place);
+      });
+      frame.dataset.pinEventsBound = 'true';
+    }
+
     pins.forEach((pin) => {
       const place = byId.get(pin.id);
       const label = pin.label || pin.name || (place && place.name) || 'Destination';
       const x = typeof pin.x === 'number' ? pin.x : 50;
       const y = typeof pin.y === 'number' ? pin.y : 50;
+      const pinData = { ...pin, label, x, y };
+      pinRegistry.set(pin.id, { pin: pinData, place });
 
       const btn = document.createElement('button');
       btn.className = 'pin';
@@ -946,24 +947,24 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
       btn.innerHTML =
         '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6c-4.1 0-7.4 3.3-7.4 7.4 0 5.3 6.5 12.6 6.8 12.9a.8.8 0 0 0 1.2 0c.3-.3 6.8-7.6 6.8-12.9 0-4.1-3.3-7.4-7.4-7.4z"/><circle cx="12" cy="9" r="2.7" fill="#fff" stroke="none"/></svg>' +
         `<span class="pin-label">${esc(label)}</span>`;
-      btn.addEventListener('click', () => askAboutPin({ ...pin, label, x, y }, place));
       frame.appendChild(btn);
     });
   }
 
   function askAboutPin(pin, place) {
+    const resolvedPlace = place || byId.get(pin.id);
     if (busy) {
-      pendingPinRequest = { pin, place };
+      queuePinRequest(pin, resolvedPlace);
       showToast('I will explain that pin next...');
       return;
     }
     document.querySelectorAll('.pin').forEach((el) => el.classList.remove('is-active'));
     document.querySelector(`.pin[data-id="${pin.id}"]`)?.classList.add('is-active');
     openChat();
-    const label = pin.label || pin.name || (place && place.name) || 'this destination';
-    const name = place ? `${place.name}, ${place.district}` : label;
+    const label = pin.label || pin.name || (resolvedPlace && resolvedPlace.name) || 'this destination';
+    const name = resolvedPlace ? `${resolvedPlace.name}, ${resolvedPlace.district}` : label;
     send(
-      `I just tapped the map pin on ${label}${place ? ` (${name})` : ''}. Explain this place to me like a friendly local guide: why a tourist must see it, what I will experience there, the best things to do, the best time to visit, and one important travel tip.`,
+      `I just tapped the map pin on ${label}${resolvedPlace ? ` (${name})` : ''}. Explain this place to me like a friendly local guide: why a tourist must see it, what I will experience there, the best things to do, the best time to visit, and one important travel tip.`,
       { display: `Tell me about ${label} 📍` }
     );
   }
@@ -8532,7 +8533,9 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
           `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.6c-4.1 0-7.4 3.3-7.4 7.4 0 5.3 6.5 12.6 6.8 12.9a.8.8 0 0 0 1.2 0c.3-.3 6.8-7.6 6.8-12.9 0-4.1-3.3-7.4-7.4-7.4z"/><circle cx="12" cy="9" r="2.7" fill="#fff" stroke="none"/></svg>` +
           `<span class="mh-pin-tooltip">${mhEsc(label)}</span>`;
 
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
           // Deactivate all pins
           frame.querySelectorAll('.mh-pin').forEach((el) => el.classList.remove('is-active'));
           btn.classList.add('is-active');
@@ -8644,12 +8647,13 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
 
     const _origSend = send;
 
-    let mobilePendingRequest = null;
+    const mobilePendingRequests = [];
 
     async function mobileSend(text, opts) {
       if (!text.trim()) return;
       if (busy) {
-        mobilePendingRequest = { text, opts };
+        mobilePendingRequests.push({ text, opts });
+        showToast('I am still answering. Your pin is queued next...');
         return;
       }
       const displayText = (opts && opts.display) ? opts.display : text;
@@ -8681,9 +8685,8 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
         busy = false;
         const sendBtn = document.querySelector('.mh-send-btn');
         if (sendBtn) sendBtn.disabled = false;
-        if (mobilePendingRequest) {
-          const nextRequest = mobilePendingRequest;
-          mobilePendingRequest = null;
+        if (mobilePendingRequests.length) {
+          const nextRequest = mobilePendingRequests.shift();
           window.setTimeout(() => mobileSend(nextRequest.text, nextRequest.opts), 80);
         }
       }
@@ -8864,6 +8867,7 @@ Reply as JSON: {"reply": "...", "places": ["id"]}`;
     // ---- Render pins ----
 
     renderMobilePins();
+    ready.then(() => renderMobilePins()).catch(() => {});
   }
 
   return { enterHome, send, openPlace };

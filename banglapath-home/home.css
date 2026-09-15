@@ -1604,6 +1604,7 @@ select:focus-visible,
 
 .chat-input input::placeholder { color: var(--faint); }
 
+
 .chat-input:focus-within input,
 .chat-input:focus-within .mic { background: #fff; border-color: #dfe5ec; }
 

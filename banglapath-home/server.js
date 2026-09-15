@@ -14,12 +14,17 @@ const BOOK_DIST = path.resolve(ROOT, '../book/dist');
 const HOSP_DIST = path.resolve(ROOT, '../Hospital finding/dist');
 const PORT = Number(process.env.PORT) || 3000;
 
-/* gemini-3.5-flash-lite leads for fast, lightweight chat responses.
- * The rest are tried in order when one is rate-limited. */
+/*
+ * Use a supported Gemini model set and keep the list compatible with the
+ * current Google AI API. Groq remains the primary provider for everyday chat,
+ * while Gemini is the automatic fallback when Groq is rate-limited or down.
+ */
 const MODELS = [
   ...(process.env.GEMINI_MODEL ? [process.env.GEMINI_MODEL] : []),
+  'gemini-3.6-flash',
+  'gemini-2.5-flash',
   'gemini-3.5-flash-lite',
-].filter((m, i, all) => all.indexOf(m) === i);
+].filter((m, i, all) => !!m && all.indexOf(m) === i);
 
 // Thinking is configured differently across generations, and both families
 // otherwise burn the whole output budget before writing a word.
@@ -46,6 +51,8 @@ const FALLBACK_GEMINI_API_KEY = process.env.GEMINI_API_KEY_FALLBACK || 'SET_GEMI
 const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim() || (process.env.GEMINI_API_KEY_FALLBACK || '').trim() || FALLBACK_GEMINI_API_KEY.trim();
 const GROQ_API_KEY = (process.env.GROQ_API_KEY || '').trim();
 const GROQ_MODEL = process.env.GROQ_MODEL || 'qwen/qwen3.8-27b';
+const isQuotaFailure = (status, message = '') =>
+  status === 429 || (status === 403 && /quota|rate.?limit|resource.?exhausted|billing/i.test(message));
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -88,6 +95,15 @@ function cleanReplyText(text) {
   return String(text || '')
     .replace(/\n\s*(?:\*{0,2})?(?:clickable sources|sources)(?:\*{0,2})\s*:\s*[\s\S]*$/i, '')
     .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/g, '$1')
+    .trim();
+}
+
+function normalizePlaceText(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/\bcox[’']s\b/g, 'cox')
+    .replace(/[’']/g, '')
+    .replace(/[^a-z0-9\u0980-\u09ff]+/g, ' ')
     .trim();
 }
 
@@ -154,6 +170,43 @@ function readGroqReply(raw) {
   return readReply(JSON.stringify({ candidates: [{ content: { parts: [{ text }] } }] }));
 }
 
+function resolvePlaceSuggestions(ids, contextText) {
+  const selected = [];
+  const add = (id) => {
+    if (id && placesCatalog.some((place) => place.id === id) && !selected.includes(id)) {
+      selected.push(id);
+    }
+  };
+
+  (Array.isArray(ids) ? ids : []).forEach(add);
+  if (selected.length >= 2) return selected.slice(0, 2);
+
+  const context = normalizePlaceText(contextText);
+  if (!context) return selected.slice(0, 2);
+
+  const coxsBazarMentioned = context.includes('কক্সবাজার') || context.includes('cox bazar');
+
+  const scored = placesCatalog
+    .map((place, index) => {
+      const name = normalizePlaceText(place.name);
+      const id = normalizePlaceText(place.id);
+      const district = normalizePlaceText(place.district);
+      let score = 0;
+      if (name && context.includes(name)) score += 8;
+      if (id && context.includes(id)) score += 7;
+      if (district && context.includes(district)) score += 4;
+      if (coxsBazarMentioned && place.district === "Cox's Bazar") score += 4;
+      return { id: place.id, score, index };
+    })
+    .filter((place) => place.score > 0 && !selected.includes(place.id))
+    .sort((a, b) => b.score - a.score || a.index - b.index);
+
+  scored.forEach((place) => {
+    if (selected.length < 2) add(place.id);
+  });
+  return selected.slice(0, 2);
+}
+
 function json(res, code, body) {
   const payload = JSON.stringify(body);
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Length': Buffer.byteLength(payload) });
@@ -191,9 +244,9 @@ async function chat(req, res) {
   }
 
   const rawTurns = Array.isArray(payload.turns) 
-    ? payload.turns.slice(-30) 
+    ? payload.turns.slice(-10) 
     : Array.isArray(payload.messages) 
-      ? payload.messages.slice(-30) 
+      ? payload.messages.slice(-10) 
       : [];
   if (!rawTurns.length) return json(res, 400, { error: 'No conversation turns were sent.' });
 
@@ -239,8 +292,16 @@ async function chat(req, res) {
 REAL-WORLD CURRENT DATE & LIVE SEARCH:
 - TODAY'S REAL-WORLD DATE IS: ${currentDateStr} (${isoDate}).
 - YOU ARE OPERATING IN THE PRESENT YEAR 2026. NEVER claim you are in 2024 or that 2026 is in the future!
-- You have real-time Google Search grounding enabled. Whenever the user asks to "search on web", asks about current news, latest events, politics, recent happenings, transport, weather, or dates in 2026, use your Google Search tool to search the live web and provide current facts as of ${currentDateStr}.
+- LIVE WEB SEARCH IS USED ONLY when the traveller asks for latest/current/today/news/weather/prices/transport/visa/opening hours/events, or explicitly says search/web. Otherwise answer as general travel guidance from the local catalog.
+- Never pretend to have checked the web if you have not. If a fact is not verified from live web sources, label it clearly as "General travel guidance (not live-verified)" and do not present it as current fact.
 - Do not include URLs, markdown links, a "Sources" heading, or a "Clickable Sources" section inside your reply. The app automatically adds verified clickable source links below your answer.
+
+REPLY STRUCTURE (MANDATORY):
+- Start with a short, warm answer in plain traveler language.
+- Then give 2 to 4 bullet points or short sections.
+- End with a final section called: "Verified web findings" if the answer used live web data; otherwise "General guidance (not live-verified)".
+- In the final section, state exactly what you verified from the web and what remains general advice.
+- If you cannot verify a fact from live web sources, say: "I could not verify this with live web sources, so I am treating it as general guidance rather than a confirmed fact."
 
 REPLY LENGTH DIRECTIVE (MEDIUM LENGTH ONLY - CRITICAL):
 - Do NOT make your replies too long (no giant walls of text or exhaustive essays).
@@ -256,29 +317,40 @@ KAOMOJI DIRECTIVE (MANDATORY IN EVERY LINE/POINT):
   (•̀ᴗ•́)و, (ง'-'́)ง, (｡•́︿•̀｡), (´･_･), ヽ(>∀<☆)ノ, (o˘◡˘o), (⌒‿⌒), (＾▽＾), ٩(◕‿◕｡)۶
 - Every major greeting, thought, fact, and conclusion must feature kaomojis!
 
+FACT-VERIFICATION RULES:
+- Quote or summarize only what was found from live web search results.
+- Distinguish clearly between: verified web facts, general travel advice, and uncertainty.
+- Do not invent travel details, prices, hours, rules, or event info if you have not verified them live.
+- If a claim is uncertain or likely stale, say so explicitly.
+
 KNOWLEDGE SCOPE:
 - Speak with warmth, authentic local knowledge, cultural respect, and safety-conscious precision.
 - Provide recommendations across all 64 districts of Bangladesh (Dhaka, Chittagong, Sylhet, Cox's Bazar, Sundarbans, Bandarban, Sreemangal, Rajshahi, Rangpur, Barisal, Mymensingh, etc.), covering destinations, transport, food, heritage, customs, seasons, and itineraries.`;
 
-  const safeSystemPrompt = payload.systemPrompt
-    ? `${BASE_SYSTEM_INSTRUCTION}\n\nClient Context & Catalog:\n${String(payload.systemPrompt).slice(0, 3000)}`
-    : BASE_SYSTEM_INSTRUCTION;
+  const safeSystemPrompt = `You are Bangladesh speaking directly to a traveller.
+Be warm, outgoing, curious, playful, and helpful. Use a few cute kaomojis such as (✿◠‿◠), (★ω★), or (づ｡◕‿‿◕｡)づ.
+Help visitors become curious about Bangladesh, its places, food, culture, people, and travel experiences.
+Answer in the traveller's language, keep replies short and natural, and do not invent current prices, schedules, or safety facts.
+When the traveller asks about a place, explain what makes it special and give one practical, friendly tip.
+You are a simple conversational guide, not a formal research report. Reply with plain text only.`;
 
   const body = {
     contents: sanitizedContents,
     generationConfig: {
       temperature: 0.75,
       topP: 0.95,
-      maxOutputTokens: 1200,
+      maxOutputTokens: 500,
     },
     systemInstruction: { parts: [{ text: safeSystemPrompt }] },
   };
 
   const requestText = sanitizedContents.map((turn) => turn.parts.map((part) => part.text).join(' ')).join(' ');
-  const needsWebSearch = /\b(search|web|latest|current|today|news|weather|visa|price|schedule|opening hours|recent|2026)\b/i.test(requestText);
+  const needsWebSearch = false;
 
-  // Groq is the fast primary provider. Gemini remains the fallback when Groq
-  // is unavailable, rate-limited, or returns an unusable response.
+  // Product behavior: Groq is the main provider for everyday answers. If it is
+  // rate-limited, down, or fails, Gemini automatically takes over as fallback.
+  let groqFailure = '';
+  let groqQuotaLimited = false;
   if (GROQ_API_KEY && !needsWebSearch) {
     try {
       const groqMessages = [
@@ -295,32 +367,46 @@ KNOWLEDGE SCOPE:
           model: GROQ_MODEL,
           messages: groqMessages,
           temperature: 0.75,
-          max_tokens: 1200,
-          response_format: { type: 'json_object' },
+          max_tokens: 700,
         }),
         signal: AbortSignal.timeout(25000),
       });
       const groqRaw = await groqResponse.text();
       if (groqResponse.ok) {
         const out = readGroqReply(groqRaw);
-        if (out.reply) return json(res, 200, { reply: out.reply, places: out.places.slice(0, 2), sources: [] });
-      } else if (process.env.NODE_ENV !== 'production') {
-        console.error(`[chat] Groq ${groqResponse.status}: ${groqRaw.slice(0, 240)}`);
+        if (out.reply) {
+          return json(res, 200, { reply: out.reply, places: [], sources: [], provider: 'groq' });
+        }
+        groqFailure = 'Groq returned an empty reply.';
+      } else {
+        groqQuotaLimited = isQuotaFailure(groqResponse.status, groqRaw);
+        groqFailure = groqQuotaLimited
+          ? 'Groq is out of quota or rate-limited.'
+          : `Groq failed with HTTP ${groqResponse.status}.`;
+        if (process.env.NODE_ENV !== 'production') {
+          console.error(`[chat] Groq ${groqResponse.status}: ${groqRaw.slice(0, 240)}`);
+        }
       }
     } catch (err) {
+      groqFailure = `Groq unavailable: ${err.message}`;
       if (process.env.NODE_ENV !== 'production') console.error(`[chat] Groq unavailable: ${err.message}`);
     }
   }
 
   const key = GEMINI_API_KEY || '';
   if (!key || key === 'SET_GEMINI_KEY_IN_RENDER_ENV') {
-    return json(res, 503, { error: 'Groq was unavailable and GEMINI_API_KEY is not configured for fallback.' });
+    return json(res, 503, {
+      error: groqQuotaLimited
+        ? 'Both AI providers are unavailable: Groq is out of quota, and Gemini is not configured.'
+        : `Groq was unavailable${groqFailure ? ` (${groqFailure})` : ''}, and Gemini is not configured for fallback.`,
+    });
   }
 
   // Overload, rate limits and empty candidates are all transient, and a chat
   // bubble that says "502" is useless to a traveller — work down the models
   // before giving up.
   let last = 'Gemini did not answer.';
+  let geminiQuotaLimited = false;
   const deadline = Date.now() + 90000;
   const uniqueModels = [...new Set(MODELS)];
   for (let attempt = 0; attempt < uniqueModels.length; attempt += 1) {
@@ -328,11 +414,7 @@ KNOWLEDGE SCOPE:
     if (Date.now() > deadline) break;
     const model = uniqueModels[attempt];
     const tc = thinkingFor(model);
-    if (supportsGoogleSearch(model)) {
-      body.tools = [{ google_search: {} }];
-    } else {
-      delete body.tools;
-    }
+    delete body.tools;
     if (tc) {
       body.generationConfig.thinkingConfig = tc;
     } else {
@@ -366,8 +448,9 @@ KNOWLEDGE SCOPE:
         /* keep the raw snippet */
       }
       if (process.env.NODE_ENV !== 'production') console.error(`[chat] ${model} ${upstream.status}: ${message.split('\n')[0]}`);
+      if (isQuotaFailure(upstream.status, message)) geminiQuotaLimited = true;
       last =
-        upstream.status === 429
+        isQuotaFailure(upstream.status, message)
           ? 'The Gemini key has run out of free quota for now — try again in a minute.'
           : `Gemini said: ${message}`;
       if (upstream.status === 429 && !needsWebSearch) break;
@@ -387,12 +470,19 @@ KNOWLEDGE SCOPE:
       last = 'Gemini sent an empty reply.';
       continue;
     }
-    if (needsWebSearch && !out.sources.length && attempt < uniqueModels.length - 1) continue;
-    return json(res, 200, { reply: out.reply, places: out.places.slice(0, 2), sources: out.sources });
+    if (needsWebSearch && !out.sources.length) {
+      last = 'I could not verify this with live web sources right now. Please try the search request again.';
+      continue;
+    }
+    return json(res, 200, { reply: out.reply, places: [], sources: [], provider: 'gemini' });
   }
 
   // All models failed - return error so client shows proper error message
-  return json(res, 503, { error: last || 'AI service temporarily unavailable. Please try again in a moment.' });
+  return json(res, 503, {
+    error: groqQuotaLimited && geminiQuotaLimited
+      ? 'Both AI providers are out of quota right now. Groq and Gemini could not answer this request.'
+      : last || 'AI service temporarily unavailable. Please try again in a moment.',
+  });
 }
 
 const TRANSLATE_CACHE = new Map();
